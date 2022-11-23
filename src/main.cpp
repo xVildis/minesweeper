@@ -96,7 +96,7 @@ public:
 	}
 };
 
-void __declspec(noreturn) free_and_quit()
+void _GLIBCXX_NORETURN free_and_quit()
 {
 	IMG_Quit();
 	TTF_Quit();
