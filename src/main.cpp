@@ -108,51 +108,57 @@ void _GLIBCXX_NORETURN free_and_quit()
 	exit(EXIT_FAILURE);
 }
 
-int main(int argc, char* argv[])
+bool InitializeSDL()
 {
-	// TODO: parse args (screen size, board size, mine count)
 	int sdl_status = SDL_Init(SDL_INIT_EVERYTHING);
 	if(sdl_status < 0) {
 		printf("Could not initialize SDL, ERROR: %s\n", SDL_GetError());
-		return EXIT_FAILURE;	
+		return false;
 	}
 
 	g_window = SDL_CreateWindow("Test", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_RESIZABLE);
 
 	if(g_window == NULL) {
 		std::cout << "Could not create window, ERROR:" << SDL_GetError() << "\n";
-		free_and_quit();
+		return false;
 	}
 
 	g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
 	if(g_renderer == NULL) {
 		std::cout << "Could not create renderer, ERROR:" << SDL_GetError() << "\n";
-		free_and_quit();
+		return false;
 	}	
-
-	SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
 	if(TTF_Init() < 0) {
 		std::cout << "Could not initialize SDL_TTF, ERROR: " << TTF_GetError() << "\n";
-		free_and_quit();
+		return false;
 	}
 
 	if(IMG_Init(IMG_INIT_PNG) < 0) {
 		std::cout << "Could not initialize SDL_IMG, ERROR: " << IMG_GetError() << "\n";
+		return false;
+	}
+
+	return true;
+}
+
+int main(int argc, char* argv[])
+{
+	// TODO: parse args (screen size, board size, mine count)
+	if(!InitializeSDL())
 		free_and_quit();
-	} 
+
+	SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
 	std::string path = std::filesystem::current_path().generic_string();
 
 	//TODO: variable font pt size?
-	TTF_Font* test_font = TTF_OpenFont("assets/joystix.monospace-regular.ttf", 12);
+	TTF_Font* test_font = TTF_OpenFont("assets/joystix.monospace-regular.ttf", 24);
 
 	if(!test_font) {
 		std::cout << "Couldn't load font, ERROR: " << TTF_GetError() << "\n";
 		free_and_quit();
 	}
-
-	Minesweeper game(30, 16, 99);
 
 	SDL_Surface* bomb_surface = IMG_Load(path.append("/assets/bomb.png").c_str());
 
@@ -161,37 +167,47 @@ int main(int argc, char* argv[])
 		free_and_quit();
 	}
 
-	//TODO: make one surface, split into parts later
-	SDL_Surface* tile_text_surface[] = {
-		TTF_RenderText_Solid(test_font, "1",{0,0,0}), TTF_RenderText_Solid(test_font, "2",{0,0,0}), TTF_RenderText_Solid(test_font, "3",{0,0,0}),
-		TTF_RenderText_Solid(test_font, "4",{0,0,0}), TTF_RenderText_Solid(test_font, "5",{0,0,0}), TTF_RenderText_Solid(test_font, "6",{0,0,0}), 
-		TTF_RenderText_Solid(test_font, "7",{0,0,0}), TTF_RenderText_Solid(test_font, "8",{0,0,0}), bomb_surface
-	};
+	SDL_Texture* bomb_texture = SDL_CreateTextureFromSurface(g_renderer, bomb_surface);
 
-    //TODO: make one texture, split into parts later
-    SDL_Texture* textTextures[] = {
-		SDL_CreateTextureFromSurface(g_renderer, tile_text_surface[0]), SDL_CreateTextureFromSurface(g_renderer, tile_text_surface[1]), SDL_CreateTextureFromSurface(g_renderer, tile_text_surface[2]),
-		SDL_CreateTextureFromSurface(g_renderer, tile_text_surface[3]), SDL_CreateTextureFromSurface(g_renderer, tile_text_surface[4]), SDL_CreateTextureFromSurface(g_renderer, tile_text_surface[5]),
-		SDL_CreateTextureFromSurface(g_renderer, tile_text_surface[6]), SDL_CreateTextureFromSurface(g_renderer, tile_text_surface[7]),
-		SDL_CreateTextureFromSurface(g_renderer, tile_text_surface[8]) // bomb
-	};
-
-	for (auto* texture : textTextures)
-	{
-		if(texture == NULL) {
-			std::cout << "Could create font textures, ERROR:" << SDL_GetError() << "\n";
-			free_and_quit();
-		}
+	if(bomb_texture == NULL) {
+		std::cout << "Could create bomb texture, ERROR:" << SDL_GetError() << "\n";
+		free_and_quit();
 	}
 
-	for (auto* surface : tile_text_surface)
-	{
-		if(surface == NULL) {
-			std::cout << "Could create font surface, ERROR:" << SDL_GetError() << "\n";
-			free_and_quit();
-		}
-		SDL_FreeSurface(surface);
+	SDL_FreeSurface(bomb_surface);
+
+	const char* numbers = "12345678";
+
+	SDL_Surface* text_surface = TTF_RenderText_Solid(test_font, numbers, {0, 0, 0});
+
+	if(text_surface == NULL) {
+		std::cout << "Couldn't render number text, ERROR: " << TTF_GetError() << "\n";
+		free_and_quit();
 	}
+
+    SDL_Texture* text_texture = SDL_CreateTextureFromSurface(g_renderer, text_surface);
+
+	if(text_texture == NULL) {
+		std::cout << "Could create font texture, ERROR:" << SDL_GetError() << "\n";
+		free_and_quit();
+	}
+
+	int font_w, font_h = 0;
+	if(TTF_SizeText(test_font, numbers, &font_w, &font_h) < 0) {
+		std::cout << "Couldn't calculate font size ERROR:" << TTF_GetError() << "\n";
+		free_and_quit();
+	}
+
+	printf("font size: %i, %i\n", font_h, font_w);
+
+	SDL_FreeSurface(text_surface);
+
+	Minesweeper game(30, 16, 99);
+
+	int minimum_h = (AREA_START * 4) + (game.height * 5) + game.height * tile_h;
+	int minimum_w = (AREA_START * 4) + (game.width * 5) + game.width * tile_w;
+
+	SDL_SetWindowMinimumSize(g_window, minimum_w, minimum_h);
 
 	while (g_running)
 	{
@@ -238,22 +254,50 @@ int main(int argc, char* argv[])
 		{
 			for(int j = 1; j <= game.width; j++) 
 			{
-				int x_offset = j * 10;
-				int y_offset = i * 10;
-				const SDL_Rect tile_rect = {
-					.x = AREA_START + j * tile_w + x_offset,
-					.y = AREA_START + i * tile_h + y_offset,
+				int x_offset = j * 5;
+				int y_offset = i * 5;
+				const SDL_Rect bound_rect = {
+					.x = j * tile_w + x_offset,
+					.y = i * tile_h + y_offset,
 					.w = tile_w,
 					.h = tile_h
 				};
+
+				TileData tile = game.Tilemap[i][j];
 				
-				if(game.Tilemap[i][j] != TILE_EMPTY) {
+				if(tile != TILE_EMPTY && tile != TILE_BOMB) {
+
+					const SDL_Rect number_rect = {
+						.x = 0,
+						.y = 0,
+						.w = (font_w + 1) / 8,
+						.h = font_h,
+					};
+
+					const SDL_Rect text_rect = {
+						.x = bound_rect.x,
+						.y = bound_rect.y,
+						.w = (font_w + 1) / 8,
+						.h = font_h,
+					};
 					
 					SDL_SetRenderDrawColor(g_renderer, 0,0,0, SDL_ALPHA_OPAQUE);
-					SDL_RenderCopy(g_renderer, textTextures[game.Tilemap[i][j] - 1], NULL, &tile_rect);
+					SDL_RenderCopy(g_renderer, text_texture, &number_rect, &text_rect);
+					SDL_SetRenderDrawColor(g_renderer, 255,255,255, SDL_ALPHA_OPAQUE);
+				} else if(tile == TILE_BOMB) {
+
+					const SDL_Rect bomb_rect = {
+						.x = bound_rect.x + 3,
+						.y = bound_rect.y + 3,
+						.w = 8 * GLOBAL_SCALE,
+						.h = 8 * GLOBAL_SCALE,
+					};
+
+					SDL_SetRenderDrawColor(g_renderer, 0,0,0, SDL_ALPHA_OPAQUE);
+					SDL_RenderCopy(g_renderer, bomb_texture, NULL, &bomb_rect);
 					SDL_SetRenderDrawColor(g_renderer, 255,255,255, SDL_ALPHA_OPAQUE);
 				}
-				RenderRectWithColor(g_renderer, &tile_rect, 0, 0, 0);
+				RenderRectWithColor(g_renderer, &bound_rect, 0, 0, 0);
 				//RenderFilledRectWithColor(g_renderer, &tile_rect, 127, 127, 127, SDL_ALPHA_OPAQUE);
 			}
 		}
