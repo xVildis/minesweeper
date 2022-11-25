@@ -7,7 +7,7 @@ constexpr static int GLOBAL_SCALE = 3;
 
 constexpr int AREA_WIDTH  = 10;
 constexpr int AREA_HEIGHT = 10;
-constexpr int AREA_START = 20;
+constexpr int AREA_START = 15;
 constexpr int tile_w = 10 * GLOBAL_SCALE;
 constexpr int tile_h = 10 * GLOBAL_SCALE;
 
