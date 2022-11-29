@@ -9,10 +9,12 @@
 #include <SDL2/SDL_image.h>
 
 #include "constants.hpp"
+#include "globals.hpp"
 #include "renderer.hpp"
+#include "font.hpp"
 
-static SDL_Window* g_window = nullptr;
-static SDL_Renderer* g_renderer = nullptr;
+SDL_Window* g_window = nullptr;
+SDL_Renderer* g_renderer = nullptr;
 
 static bool g_running = true;
 
@@ -208,12 +210,7 @@ int main(int argc, char* argv[])
 	SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
 	//TODO: variable font pt size?
-	TTF_Font* test_font = TTF_OpenFont("assets/joystix.monospace-regular.ttf", 24);
-
-	if(!test_font) {
-		std::cout << "Couldn't load font, ERROR: " << TTF_GetError() << "\n";
-		free_and_quit();
-	}
+	TTF_Font* test_font = load_font("assets/joystix.monospace-regular.ttf", 24);
 
 	SDL_Texture* number_texture = render_number_texture(test_font);
 
@@ -227,9 +224,8 @@ int main(int argc, char* argv[])
 
 	Minesweeper game(30, 16, 99);
 
-	int minimum_h = (AREA_START * 4) + (game.height * 5) + game.height * tile_h;
-	int minimum_w = (AREA_START * 4) + (game.width * 5) + game.width * tile_w;
-
+	const int minimum_h = (AREA_START * 4) + (game.height * 5) + game.height * tile_h;
+	const int minimum_w = (AREA_START * 4) + (game.width  * 5) + game.width  * tile_w;
 	SDL_SetWindowMinimumSize(g_window, minimum_w, minimum_h);
 
 	while (g_running)

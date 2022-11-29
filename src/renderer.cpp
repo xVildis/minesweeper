@@ -2,8 +2,9 @@
 
 #include <SDL2/SDL.h>
 
-#include "renderer.hpp"
 #include "constants.hpp"
+#include "renderer.hpp"
+#include "globals.hpp"
 
 void RenderFilledRectWithColor(SDL_Renderer* renderer, const SDL_Rect* rect, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {

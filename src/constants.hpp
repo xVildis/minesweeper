@@ -24,15 +24,3 @@ enum TileData
     TILE_8,
     TILE_BOMB,
 };
-
-void _GLIBCXX_NORETURN free_and_quit()
-{
-	IMG_Quit();
-	TTF_Quit();
-
-	SDL_DestroyRenderer(g_renderer);
-	SDL_DestroyWindow(g_window);
-	SDL_Quit();
-
-	exit(EXIT_FAILURE);
-}

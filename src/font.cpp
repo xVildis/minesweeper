@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL_ttf.h>
 
+#include "globals.hpp"
 #include "constants.hpp"
 #include "font.hpp"
 
