@@ -209,6 +209,14 @@ int main(int argc, char* argv[])
 
 	SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
+#ifdef __unix__
+	if(!SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0"))
+    {
+        std::cout << "SDL can not disable compositor bypass!" << std::endl;
+        free_and_quit();
+    }
+#endif
+
 	//TODO: variable font pt size?
 	TTF_Font* test_font = load_font("assets/joystix.monospace-regular.ttf", 24);
 
