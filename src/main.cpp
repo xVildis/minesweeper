@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <random>
-#include <cassert>
 #include <filesystem>
 
 #include <SDL2/SDL.h>
@@ -18,17 +17,36 @@ SDL_Renderer* g_renderer = nullptr;
 
 static bool g_running = true;
 
+enum TileData
+{
+    TILE_EMPTY = 0,
+    TILE_1,
+    TILE_2,
+    TILE_3,
+    TILE_4,
+    TILE_5,
+    TILE_6,
+    TILE_7,
+    TILE_8,
+    TILE_BOMB,
+};
+
+struct Tile {
+	TileData data = TILE_EMPTY;
+	bool open = false;
+};
+
 class Minesweeper {
 public:
 	int width, height;
 	int bombcount;
 
-	std::vector<std::vector<TileData>> Tilemap;
+	std::vector<std::vector<Tile>> Tilemap;
 
 	Minesweeper(int width, int height, int bombcount) 
 		: width(width), height(height)
 	{
-		this->Tilemap = std::vector<std::vector<TileData>>( 1 + height + 1, std::vector<TileData>(1 + width + 1, TILE_EMPTY));
+		this->Tilemap = std::vector<std::vector<Tile>>( 1 + height + 1, std::vector<Tile>(1 + width + 1, Tile() ) );
 
 		if(bombcount > width * height) {
 			this->bombcount = width * height;
@@ -48,35 +66,32 @@ public:
 			int r_width  = random_width(rng);
 			int r_height = random_height(rng);
 
-			assert(r_width <= width);
-			assert(r_height <= height);
+			Tile& tile = this->Tilemap[r_height][r_width];
 
-			TileData& tile = this->Tilemap[r_height][r_width];
-
-			if(tile != TILE_BOMB) {
-				tile = TILE_BOMB;
+			if(tile.data != TILE_BOMB) {
+				tile.data = TILE_BOMB;
 				placed_bombs++;
 			}
 		}
 
 		for(int i = 1; i <= height; i++) {
 			for(int j = 1; j <= width; j++) {
-				if(this->Tilemap[i][j] == TILE_BOMB)
+				if(this->Tilemap[i][j].data == TILE_BOMB)
 					continue;
 
-				const std::vector<TileData> neighbors = {
+				const std::vector<Tile> neighbors = {
 					this->Tilemap[i - 1][j - 1], this->Tilemap[i - 1][j], this->Tilemap[i - 1][j + 1],
 					this->Tilemap[i][j - 1],   /*this->Tilemap[i][j],*/   this->Tilemap[i][j + 1],
 					this->Tilemap[i + 1][j - 1], this->Tilemap[i + 1][j], this->Tilemap[i + 1][j + 1]
 				};
 
 				int tile_number = 0;
-				for(const TileData& neighbor : neighbors) {
-					if(neighbor == TILE_BOMB)
+				for(const Tile& neighbor : neighbors) {
+					if(neighbor.data == TILE_BOMB)
 						tile_number++;
 				}
 
-				this->Tilemap[i][j] = (TileData)tile_number;
+				this->Tilemap[i][j].data = (TileData)tile_number;
 			}
 		}
 	}
@@ -85,9 +100,9 @@ public:
 	{
 		for(int i = 0; i <= this->height + 1; i++) {
 			for(int j = 0; j <= this->width + 1; j++) {
-				if(this->Tilemap[i][j] == TILE_BOMB) {
+				if(this->Tilemap[i][j].data == TILE_BOMB) {
 					printf("\033[41mB\033[0m ");
-				} else if(this->Tilemap[i][j] == TILE_EMPTY) {
+				} else if(this->Tilemap[i][j].data == TILE_EMPTY) {
 					printf("  ");
 				} else {
 					printf("%i ", this->Tilemap[i][j]);
@@ -132,53 +147,90 @@ bool initialize_sdl()
 	return true;
 }
 
+bool rmb_isdown;
+bool rmb_wasdown;
+
+bool lmb_isdown;
+bool lmb_wasdown;
+
+bool pixel_to_tile(int x, int y)
+{
+	
+}
+
 void handle_input()
 {
 	SDL_Event event;
-		while (SDL_PollEvent(&event) != 0) {
-			if (event.type == SDL_QUIT) {
-				g_running = false;
-			}
-
-			switch(event.type)
-			{
-				case SDL_KEYDOWN:
-				{
-					SDL_KeyboardEvent keyevent = event.key;
-					if(keyevent.keysym.sym == SDLK_ESCAPE)
-					{
-						g_running = false;
-						break;
-					}
-			
-					break;
-				}
-
-				// TODO: set emoji at the top
-				case SDL_MOUSEBUTTONDOWN:
-				case SDL_MOUSEBUTTONUP:
-				{
-					//Get mouse position
-					int x, y;
-					int button = SDL_GetMouseState( &x, &y );
-
-					if(button == SDL_BUTTON_LEFT) {
-						printf("left button pressed!\n");
-					}
-				}
-
-				default:
-					break;
-			}
+	while (SDL_PollEvent(&event) != 0) {
+		if (event.type == SDL_QUIT) {
+			g_running = false;
 		}
+
+		switch(event.type)
+		{
+			case SDL_KEYDOWN:
+			{
+				SDL_KeyboardEvent keyevent = event.key;
+				if(keyevent.keysym.sym == SDLK_ESCAPE)
+				{
+					g_running = false;
+					break;
+				}
+		
+				break;
+			}
+
+			// TODO: set emoji at the top
+			case SDL_MOUSEBUTTONDOWN:
+			{
+				SDL_MouseButtonEvent mouse_event = event.button;
+				int x, y;
+				int button = SDL_GetMouseState( &x, &y );
+				if(button & SDL_BUTTON_LMASK) {
+					lmb_isdown = true;
+					if(!lmb_wasdown) {
+						lmb_wasdown = true;
+						printf("lmb down\n");
+					}
+				}
+				if(button & SDL_BUTTON_RMASK) {
+					rmb_isdown = true;
+					if(!rmb_wasdown) {
+						rmb_wasdown = true;
+						printf("rmb down\n");
+					}
+				}
+				break;
+			}
+
+			case SDL_MOUSEBUTTONUP:
+			{
+				SDL_MouseButtonEvent mouse_event = event.button;
+				int x, y;
+				int button = SDL_GetMouseState( &x, &y );
+				if(!(button & SDL_BUTTON_LMASK) && lmb_wasdown) {
+					lmb_isdown = false;
+					lmb_wasdown = false;
+					printf("lmb up\n");
+				}
+				if(!(button & SDL_BUTTON_RMASK) && rmb_wasdown) {
+					rmb_isdown = false;
+					rmb_wasdown = false;
+					printf("rmb up\n");
+				}
+				break;
+			}
+
+			default:
+				break;
+		}
+	}
 		
 }
 
-constexpr char numbers[] = "12345678";
-
-SDL_Texture* render_number_texture(TTF_Font* font)
+SDL_Texture* render_number_texture(TTF_Font* font, const char* text, SDL_Color color = {0,0,0})
 {
-	SDL_Surface* text_surface = TTF_RenderText_Solid(font, numbers, {0, 0, 0});
+	SDL_Surface* text_surface = TTF_RenderText_Solid(font, text, color);
 
 	if(text_surface == NULL) {
 		std::cout << "Couldn't render number text, ERROR: " << TTF_GetError() << "\n";
@@ -216,51 +268,79 @@ int main(int argc, char* argv[])
         free_and_quit();
     }
 #endif
-
 	//TODO: variable font pt size?
 	TTF_Font* test_font = load_font("assets/joystix.monospace-regular.ttf", 24);
 
-	SDL_Texture* number_texture = render_number_texture(test_font);
+	SDL_Texture* number_textures[] = {
+		render_number_texture(test_font, "1"), render_number_texture(test_font, "2"), render_number_texture(test_font, "3"),
+		render_number_texture(test_font, "4"), render_number_texture(test_font, "5"), render_number_texture(test_font, "6"),
+		render_number_texture(test_font, "7"), render_number_texture(test_font, "8")
+	};
 
-	int font_w, font_h = 0;
-	if(TTF_SizeText(test_font, numbers, &font_w, &font_h) < 0) {
-		std::cout << "Couldn't calculate font size ERROR:" << TTF_GetError() << "\n";
-		free_and_quit();
-	}
-
-	printf("font size: %i, %i\n", font_h, font_w);
+	SDL_Texture* bomb_texture = load_bomb_texture();
 
 	Minesweeper game(30, 16, 99);
 
-	const int minimum_h = (AREA_START * 4) + (game.height * 5) + game.height * tile_h;
-	const int minimum_w = (AREA_START * 4) + (game.width  * 5) + game.width  * tile_w;
+	const int minimum_h = (AREA_START * 4) + game.height * tile_h;
+	const int minimum_w = (AREA_START * 4) + game.width  * tile_w;
 	SDL_SetWindowMinimumSize(g_window, minimum_w, minimum_h);
+
+	printf("min height %i\n", minimum_h);
 
 	while (g_running)
 	{
 		handle_input();
 		SDL_RenderClear(g_renderer);
-		
+
+		for(int i = 0; auto* texture : number_textures) {
+			int w, h = 0;
+			SDL_QueryTexture(texture, NULL, NULL, &w, &h);
+			//printf("w %i, h %i\n", w, h);
+			const SDL_Rect debug_rect = {
+				.x = AREA_START + (i * w),
+				.y = 520,
+				.w = 20,
+				.h = 29
+			};
+
+			SDL_RenderCopy(g_renderer, texture, NULL, &debug_rect);
+			i++;
+		}
+
 		for(int column = 1; column <= game.height; column++) 
 		{
 			for(int row = 1; row <= game.width; row++) 
 			{
-				TileData tile = game.Tilemap[column][row];
+				const int xpos = AREA_START + (row    - 1) * tile_w + (row    - 1);
+				const int ypos = AREA_START + (column - 1) * tile_h + (column - 1);
+				Tile& tile = game.Tilemap[column][row];
 				const SDL_Rect bound_rect = {
-					.x = row * tile_w + (row * GLOBAL_SCALE),
-					.y = column * tile_h + (column * GLOBAL_SCALE),
+					.x = xpos,
+					.y = ypos,
 					.w = tile_w,
 					.h = tile_h
 				};
-				
-				const SDL_Rect font_rect = {
-					// dont know why i need to add tile number of pixels as offset
-					.x = (font_w / 8) * (tile - 1) + tile,
-					.y = 0,
-					.w = (font_w / 10),
-					.h = font_h
-				};
-				SDL_RenderCopy(g_renderer, number_texture, &font_rect, &bound_rect);
+				if(tile.open) {
+					if(tile.data != TILE_BOMB && tile.data != TILE_EMPTY) {
+						const SDL_Rect number_rect = {
+							.x = xpos + 4,
+							.y = ypos,
+							.w = 20, 
+							.h = 29
+						};
+						SDL_RenderCopy(g_renderer, number_textures[tile.data - 1], NULL, &number_rect);
+					} else if(tile.data == TILE_BOMB) {
+						const SDL_Rect bomb_rect = {
+							.x = bound_rect.x + 3,
+							.y = bound_rect.y + 3,
+							.w = tile_w - 6,
+							.h = tile_h - 6
+						};
+						SDL_RenderCopy(g_renderer, bomb_texture, NULL, &bomb_rect);
+					}
+				} else {
+					RenderFilledRectWithColor(g_renderer, &bound_rect, 127, 127, 127);
+				}
 
 				RenderRectWithColor(g_renderer, &bound_rect, 0, 0, 0);
 			}
