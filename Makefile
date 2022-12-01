@@ -35,7 +35,7 @@ ifeq ($(OS),Windows_NT) # OS is a preexisting environment variable on Windows
 	OS = windows
 else
 	UNAME := $(shell uname -s)
-	ifeq ifeq ($(UNAME),Linux)
+	ifeq ($(UNAME),Linux)
 		OS = linux
 	else
     	$(error OS not supported by this Makefile)
@@ -60,7 +60,7 @@ else ifeq ($(OS),linux)
 	# Linux-specific settings
 	INCLUDES +=
 	LDFLAGS +=
-	LDLIBS2 +=
+	LDLIBS2 = $(LDLIBS)
 endif
 
 ################################################################################
