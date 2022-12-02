@@ -5,9 +5,8 @@ constexpr static int SCREEN_HEIGHT = 600;
 
 constexpr static int GLOBAL_SCALE = 3;
 
-constexpr int AREA_WIDTH  = 10;
-constexpr int AREA_HEIGHT = 10;
-constexpr int AREA_START = 15;
-constexpr int tile_w = 10 * GLOBAL_SCALE;
-constexpr int tile_h = 10 * GLOBAL_SCALE;
+constexpr int AREA_START = 30;
+constexpr int TILE_WIDTH = 10 * GLOBAL_SCALE;
+constexpr int TILE_HEIGHT = 10 * GLOBAL_SCALE;
 
+constexpr int TILE_SPACER = 3;
