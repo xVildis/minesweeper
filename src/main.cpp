@@ -152,12 +152,26 @@ bool rmb_wasdown;
 bool lmb_isdown;
 bool lmb_wasdown;
 
-bool pixel_to_tile(int x, int y)
+bool pixel_to_tile(Minesweeper* game, int x, int y, int* row, int* column)
 {
-	
+	int bound_x = AREA_START + (game->width  * TILE_WIDTH)  + game->width; 
+	int bound_y = AREA_START + (game->height * TILE_HEIGHT) + game->height;
+
+	printf("x: %i, y: %i\n", x, y);
+
+	if (x < AREA_START || y < AREA_START ||
+		x > bound_x || y > bound_y) 
+	{
+		return false;
+	}
+
+	*row =    (y - (y % (TILE_HEIGHT + 1))) / (TILE_HEIGHT + 1);
+	*column = (x - (x % (TILE_WIDTH  + 1))) / (TILE_WIDTH  + 1);
+
+	return true;
 }
 
-void handle_input()
+void handle_input(Minesweeper* game)
 {
 	SDL_Event event;
 	while (SDL_PollEvent(&event) != 0) {
@@ -189,14 +203,16 @@ void handle_input()
 					lmb_isdown = true;
 					if(!lmb_wasdown) {
 						lmb_wasdown = true;
-						printf("lmb down\n");
+						//printf("lmb down\n");
+
+						
 					}
 				}
 				if(button & SDL_BUTTON_RMASK) {
 					rmb_isdown = true;
 					if(!rmb_wasdown) {
 						rmb_wasdown = true;
-						printf("rmb down\n");
+						//printf("rmb down\n");
 					}
 				}
 				break;
@@ -210,12 +226,12 @@ void handle_input()
 				if(!(button & SDL_BUTTON_LMASK) && lmb_wasdown) {
 					lmb_isdown = false;
 					lmb_wasdown = false;
-					printf("lmb up\n");
+					//printf("lmb up\n");
 				}
 				if(!(button & SDL_BUTTON_RMASK) && rmb_wasdown) {
 					rmb_isdown = false;
 					rmb_wasdown = false;
-					printf("rmb up\n");
+					//printf("rmb up\n");
 				}
 				break;
 			}
