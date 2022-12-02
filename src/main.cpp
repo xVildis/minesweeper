@@ -105,7 +105,7 @@ public:
 				} else if(this->Tilemap[i][j].data == TILE_EMPTY) {
 					printf("  ");
 				} else {
-					printf("%i ", this->Tilemap[i][j]);
+					printf("%i ", this->Tilemap[i][j].data);
 				}
 			}
 			printf("\n");
