@@ -1,6 +1,5 @@
 #include <iostream>
-
-#include <SDL2/SDL.h>
+#include <filesystem>
 
 #include "constants.hpp"
 #include "renderer.hpp"
@@ -38,4 +37,29 @@ SDL_Texture* RenderSurfaceToTexture(SDL_Renderer* renderer, SDL_Surface* surface
 	SDL_FreeSurface(surface);
 
 	return texture;
+}
+
+SDL_Texture* load_and_render_image_to_texture(SDL_Renderer* renderer, const char* path)
+{
+	std::string cwd = std::filesystem::current_path().generic_string();
+	SDL_Surface* image_surface = IMG_Load(cwd.append("/").append(path).c_str());
+
+	if(image_surface == NULL) {
+		std::cout << "Couldn't load image "<< path << ", ERROR: " << IMG_GetError() << "\n";
+		free_and_quit();
+	}
+
+	return RenderSurfaceToTexture(renderer, image_surface);
+}
+
+SDL_Texture* render_colored_text(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color)
+{
+	SDL_Surface* text_surface = TTF_RenderText_Solid(font, text, color);
+
+	if(text_surface == NULL) {
+		std::cout << "Couldn't render number text, ERROR: " << TTF_GetError() << "\n";
+		free_and_quit();
+	}
+
+	return RenderSurfaceToTexture(renderer, text_surface);
 }

@@ -1,7 +1,6 @@
 #include <iostream>
 #include <vector>
 #include <random>
-#include <filesystem>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -228,32 +227,7 @@ void handle_input()
 		
 }
 
-SDL_Texture* render_number_texture(TTF_Font* font, const char* text, SDL_Color color = {0,0,0})
-{
-	SDL_Surface* text_surface = TTF_RenderText_Solid(font, text, color);
-
-	if(text_surface == NULL) {
-		std::cout << "Couldn't render number text, ERROR: " << TTF_GetError() << "\n";
-		free_and_quit();
-	}
-
-	return RenderSurfaceToTexture(g_renderer, text_surface);
-}
-
-SDL_Texture* load_bomb_texture()
-{
-	std::string path = std::filesystem::current_path().generic_string();
-	SDL_Surface* bomb_surface = IMG_Load(path.append("/assets/bomb.png").c_str());
-
-	if(bomb_surface == NULL) {
-		std::cout << "Couldn't load bomb image, ERROR: " << IMG_GetError() << "\n";
-		free_and_quit();
-	}
-
-	return RenderSurfaceToTexture(g_renderer, bomb_surface);
-}
-
-int main(int argc, char* argv[])
+int main( __attribute_maybe_unused__ int argc, __attribute_maybe_unused__ char* argv[])
 {
 	// TODO: parse args (screen size, board size, mine count)
 	if(!initialize_sdl())
