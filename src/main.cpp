@@ -262,73 +262,73 @@ int main( __attribute_maybe_unused__ int argc, __attribute_maybe_unused__ char* 
 	TTF_Font* test_font = load_font("assets/joystix.monospace-regular.ttf", 24);
 
 	SDL_Texture* number_textures[] = {
-		render_number_texture(test_font, "1"), render_number_texture(test_font, "2"), render_number_texture(test_font, "3"),
-		render_number_texture(test_font, "4"), render_number_texture(test_font, "5"), render_number_texture(test_font, "6"),
-		render_number_texture(test_font, "7"), render_number_texture(test_font, "8")
+		render_colored_text(g_renderer, test_font, "1"), render_colored_text(g_renderer, test_font, "2"), render_colored_text(g_renderer, test_font, "3"),
+		render_colored_text(g_renderer, test_font, "4"), render_colored_text(g_renderer, test_font, "5"), render_colored_text(g_renderer, test_font, "6"),
+		render_colored_text(g_renderer, test_font, "7"), render_colored_text(g_renderer, test_font, "8")
 	};
 
-	SDL_Texture* bomb_texture = load_bomb_texture();
+	SDL_Texture* bomb_texture = load_and_render_image_to_texture(g_renderer, "assets/bomb.png");
 
 	Minesweeper game(30, 16, 99);
 
-	const int minimum_h = (AREA_START * 4) + game.height * tile_h;
-	const int minimum_w = (AREA_START * 4) + game.width  * tile_w;
+	const int minimum_h = (AREA_START * 2) + game.height * TILE_HEIGHT;
+	const int minimum_w = (AREA_START * 2) + game.width  * TILE_WIDTH;
 	SDL_SetWindowMinimumSize(g_window, minimum_w, minimum_h);
 
-	printf("min height %i\n", minimum_h);
+	int w, h = 0;
+	SDL_QueryTexture(number_textures[0], NULL, NULL, &w, &h);
 
 	while (g_running)
 	{
-		handle_input();
+		handle_input(&game);
 		SDL_RenderClear(g_renderer);
+/*
 
 		for(int i = 0; auto* texture : number_textures) {
-			int w, h = 0;
-			SDL_QueryTexture(texture, NULL, NULL, &w, &h);
-			//printf("w %i, h %i\n", w, h);
 			const SDL_Rect debug_rect = {
 				.x = AREA_START + (i * w),
-				.y = 520,
-				.w = 20,
-				.h = 29
+				.y = AREA_START * 2 + (TILE_HEIGHT * game.height),
+				.w = w,
+				.h = h
 			};
-
 			SDL_RenderCopy(g_renderer, texture, NULL, &debug_rect);
 			i++;
 		}
-
+*/
 		for(int column = 1; column <= game.height; column++) 
 		{
 			for(int row = 1; row <= game.width; row++) 
 			{
-				const int xpos = AREA_START + (row    - 1) * tile_w + (row    - 1);
-				const int ypos = AREA_START + (column - 1) * tile_h + (column - 1);
+				const int xpos = AREA_START + (row    - 1) * TILE_WIDTH  + (row    - 1);
+				const int ypos = AREA_START + (column - 1) * TILE_HEIGHT + (column - 1);
 				Tile& tile = game.Tilemap[column][row];
 				const SDL_Rect bound_rect = {
 					.x = xpos,
 					.y = ypos,
-					.w = tile_w,
-					.h = tile_h
+					.w = TILE_WIDTH,
+					.h = TILE_HEIGHT
 				};
 				if(tile.open) {
 					if(tile.data != TILE_BOMB && tile.data != TILE_EMPTY) {
 						const SDL_Rect number_rect = {
 							.x = xpos + 4,
 							.y = ypos,
-							.w = 20, 
-							.h = 29
+							.w = w, 
+							.h = h
 						};
 						SDL_RenderCopy(g_renderer, number_textures[tile.data - 1], NULL, &number_rect);
 					} else if(tile.data == TILE_BOMB) {
 						const SDL_Rect bomb_rect = {
-							.x = bound_rect.x + 3,
-							.y = bound_rect.y + 3,
-							.w = tile_w - 6,
-							.h = tile_h - 6
+							.x = bound_rect.x + TILE_SPACER,
+							.y = bound_rect.y + TILE_SPACER,
+							.w = TILE_WIDTH -  (TILE_SPACER * 2),
+							.h = TILE_HEIGHT - (TILE_SPACER *  2)
 						};
 						SDL_RenderCopy(g_renderer, bomb_texture, NULL, &bomb_rect);
 					}
-				} else {
+				} 
+				else 
+				{
 					RenderFilledRectWithColor(g_renderer, &bound_rect, 127, 127, 127);
 				}
 
