@@ -287,8 +287,8 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 
 	Minesweeper game(30, 16, 99);
 
-	const int minimum_h = (AREA_START * 2) + game.height * TILE_HEIGHT;
-	const int minimum_w = (AREA_START * 2) + game.width  * TILE_WIDTH;
+	const int minimum_h = (AREA_START * 3) + game.height * TILE_HEIGHT;
+	const int minimum_w = (AREA_START * 3) + game.width  * TILE_WIDTH;
 	SDL_SetWindowMinimumSize(g_window, minimum_w, minimum_h);
 
 	int w, h = 0;
