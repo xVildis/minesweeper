@@ -217,8 +217,8 @@ void handle_input(Minesweeper* game)
 			case SDL_MOUSEBUTTONDOWN:
 			{
 				SDL_MouseButtonEvent mouse_event = event.button;
-				int x, y;
-				int button = SDL_GetMouseState( &x, &y );
+				int x = mouse_event.x, y = mouse_event.y;
+				int button = mouse_event.button;
 				if(button & SDL_BUTTON_LMASK) {
 					lmb_isdown = true;
 					if(!lmb_wasdown) {
@@ -247,8 +247,8 @@ void handle_input(Minesweeper* game)
 			case SDL_MOUSEBUTTONUP:
 			{
 				SDL_MouseButtonEvent mouse_event = event.button;
-				int x, y;
-				int button = SDL_GetMouseState( &x, &y );
+				int x = mouse_event.x, y = mouse_event.y;
+				int button = mouse_event.button;
 				if(!(button & SDL_BUTTON_LMASK) && lmb_wasdown) {
 					lmb_isdown = false;
 					lmb_wasdown = false;
