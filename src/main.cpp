@@ -115,8 +115,8 @@ public:
 	void open_tile(int row, int col)
 	{
 		Tile* tile = &this->Tilemap[row][col];
-		if(!tile->open) {
-			tile->flagged = true;
+		if(!tile->flagged) {
+			tile->open = true;
 		}
 	}
 
@@ -126,8 +126,8 @@ public:
 		if(col > width) return;
 
 		Tile* tile = &this->Tilemap[row][col];
-		if(!tile->flagged) {
-			tile->open = true;
+		if(!tile->open) {
+			tile->flagged = !tile->flagged;
 		}
 	}
 };
@@ -253,7 +253,7 @@ void handle_input(Minesweeper* game)
 					lmb_isdown = false;
 					lmb_wasdown = false;
 				}
-				if(!(button & SDL_BUTTON_RMASK) && rmb_wasdown) {
+				if(!(button & SDL_BUTTON(2)) && rmb_wasdown) {
 					rmb_isdown = false;
 					rmb_wasdown = false;
 				}
@@ -267,7 +267,7 @@ void handle_input(Minesweeper* game)
 		
 }
 
-int main( int argc, char* argv[])
+int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 {
 	// TODO: parse args (screen size, board size, mine count)
 	if(!initialize_sdl())
