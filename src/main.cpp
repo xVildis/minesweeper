@@ -219,44 +219,35 @@ void handle_input(Minesweeper* game)
 				SDL_MouseButtonEvent mouse_event = event.button;
 				int x = mouse_event.x, y = mouse_event.y;
 				int button = mouse_event.button;
-				if(button & SDL_BUTTON_LMASK) {
-					lmb_isdown = true;
-					if(!lmb_wasdown) {
-						lmb_wasdown = true;
-						
-						int row = 0, column = 0;
-						if(pixel_to_tile(game, x, y, &row, &column)) {
-							game->open_tile(row, column);
+
+				switch (button) 
+				{
+					case SDL_BUTTON_LEFT:
+					{
+						int row = 0, col = 0;
+						if(pixel_to_tile(game, x, y, &row, &col)) {
+							game->open_tile(row, col);
 						}
+						break;
 					}
-				}
-				if(button & SDL_BUTTON_RMASK) {
-					rmb_isdown = true;
-					if(!rmb_wasdown) {
-						rmb_wasdown = true;
-						
-						int row = 0, column = 0;
-						if(pixel_to_tile(game, x, y, &row, &column)) {
-							game->flag_tile(row, column);
+					case SDL_BUTTON_RIGHT:
+					{
+						int row = 0, col = 0;
+						if(pixel_to_tile(game, x, y, &row, &col)) {
+							game->flag_tile(row, col);
 						}
+						break;
 					}
+
+					default:
+						break;
 				}
+				
 				break;
 			}
 
 			case SDL_MOUSEBUTTONUP:
 			{
-				SDL_MouseButtonEvent mouse_event = event.button;
-				int x = mouse_event.x, y = mouse_event.y;
-				int button = mouse_event.button;
-				if(!(button & SDL_BUTTON_LMASK) && lmb_wasdown) {
-					lmb_isdown = false;
-					lmb_wasdown = false;
-				}
-				if(!(button & SDL_BUTTON(2)) && rmb_wasdown) {
-					rmb_isdown = false;
-					rmb_wasdown = false;
-				}
 				break;
 			}
 
