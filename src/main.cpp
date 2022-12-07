@@ -33,6 +33,7 @@ enum TileData
 struct Tile {
 	TileData data = TILE_EMPTY;
 	bool open = false;
+	bool flagged = false;
 };
 
 class Minesweeper {
@@ -108,6 +109,25 @@ public:
 				}
 			}
 			printf("\n");
+		}
+	}
+
+	void open_tile(int row, int col)
+	{
+		Tile* tile = &this->Tilemap[row][col];
+		if(!tile->open) {
+			tile->flagged = true;
+		}
+	}
+
+	void flag_tile(int row, int col)
+	{
+		if(row > height) return;
+		if(col > width) return;
+
+		Tile* tile = &this->Tilemap[row][col];
+		if(!tile->flagged) {
+			tile->open = true;
 		}
 	}
 };
@@ -203,16 +223,22 @@ void handle_input(Minesweeper* game)
 					lmb_isdown = true;
 					if(!lmb_wasdown) {
 						lmb_wasdown = true;
-						//printf("lmb down\n");
-
 						
+						int row = 0, column = 0;
+						if(pixel_to_tile(game, x, y, &row, &column)) {
+							game->open_tile(row, column);
+						}
 					}
 				}
 				if(button & SDL_BUTTON_RMASK) {
 					rmb_isdown = true;
 					if(!rmb_wasdown) {
 						rmb_wasdown = true;
-						//printf("rmb down\n");
+						
+						int row = 0, column = 0;
+						if(pixel_to_tile(game, x, y, &row, &column)) {
+							game->flag_tile(row, column);
+						}
 					}
 				}
 				break;
@@ -226,12 +252,10 @@ void handle_input(Minesweeper* game)
 				if(!(button & SDL_BUTTON_LMASK) && lmb_wasdown) {
 					lmb_isdown = false;
 					lmb_wasdown = false;
-					//printf("lmb up\n");
 				}
 				if(!(button & SDL_BUTTON_RMASK) && rmb_wasdown) {
 					rmb_isdown = false;
 					rmb_wasdown = false;
-					//printf("rmb up\n");
 				}
 				break;
 			}
@@ -243,7 +267,7 @@ void handle_input(Minesweeper* game)
 		
 }
 
-int main( __attribute_maybe_unused__ int argc, __attribute_maybe_unused__ char* argv[])
+int main( int argc, char* argv[])
 {
 	// TODO: parse args (screen size, board size, mine count)
 	if(!initialize_sdl())
@@ -268,6 +292,7 @@ int main( __attribute_maybe_unused__ int argc, __attribute_maybe_unused__ char* 
 	};
 
 	SDL_Texture* bomb_texture = load_and_render_image_to_texture(g_renderer, "assets/bomb.png");
+	SDL_Texture* flag_texture = load_and_render_image_to_texture(g_renderer, "assets/flag.png");
 
 	Minesweeper game(30, 16, 99);
 
@@ -301,7 +326,7 @@ int main( __attribute_maybe_unused__ int argc, __attribute_maybe_unused__ char* 
 			{
 				const int xpos = AREA_START + (row    - 1) * TILE_WIDTH  + (row    - 1);
 				const int ypos = AREA_START + (column - 1) * TILE_HEIGHT + (column - 1);
-				Tile& tile = game.Tilemap[column][row];
+				const Tile& tile = game.Tilemap[column][row];
 				const SDL_Rect bound_rect = {
 					.x = xpos,
 					.y = ypos,
@@ -322,14 +347,23 @@ int main( __attribute_maybe_unused__ int argc, __attribute_maybe_unused__ char* 
 							.x = bound_rect.x + TILE_SPACER,
 							.y = bound_rect.y + TILE_SPACER,
 							.w = TILE_WIDTH -  (TILE_SPACER * 2),
-							.h = TILE_HEIGHT - (TILE_SPACER *  2)
+							.h = TILE_HEIGHT - (TILE_SPACER * 2)
 						};
 						SDL_RenderCopy(g_renderer, bomb_texture, NULL, &bomb_rect);
 					}
-				} 
+				}
 				else 
 				{
 					RenderFilledRectWithColor(g_renderer, &bound_rect, 127, 127, 127);
+					if(tile.flagged) {
+						const SDL_Rect flag_rect = {
+							.x = bound_rect.x + TILE_SPACER,
+							.y = bound_rect.y + TILE_SPACER,
+							.w = TILE_WIDTH -  (TILE_SPACER * 2),
+							.h = TILE_HEIGHT - (TILE_SPACER * 2)
+						};
+						SDL_RenderCopy(g_renderer, flag_texture, NULL, &flag_rect);
+					}
 				}
 
 				RenderRectWithColor(g_renderer, &bound_rect, 0, 0, 0);
