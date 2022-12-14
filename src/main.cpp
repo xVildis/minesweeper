@@ -37,23 +37,23 @@ struct Tile {
 };
 
 class Minesweeper {
+	int bombcount;
 public:
 	int width, height;
-	int bombcount;
 
-	std::vector<std::vector<Tile>> Tilemap;
+	std::vector<std::vector<Tile>> tilemap;
 
 	Minesweeper(int width, int height, int bombcount) 
 		: width(width), height(height)
 	{
-		this->Tilemap = std::vector<std::vector<Tile>>( 1 + height + 1, std::vector<Tile>(1 + width + 1, Tile() ) );
+		this->tilemap = std::vector<std::vector<Tile>>( 1 + height + 1, std::vector<Tile>(1 + width + 1, Tile() ) );
 
 		if(bombcount > width * height) {
 			this->bombcount = width * height;
 		} else {
 			this->bombcount = bombcount;
 		}
-		
+
 		std::random_device dev;
 		std::mt19937 rng(dev());
 
@@ -66,23 +66,23 @@ public:
 			int r_width  = random_width(rng);
 			int r_height = random_height(rng);
 
-			Tile& tile = this->Tilemap[r_height][r_width];
+			Tile& tile = this->tilemap[r_height][r_width];
 
 			if(tile.data != TILE_BOMB) {
 				tile.data = TILE_BOMB;
 				placed_bombs++;
 			}
 		}
-
+		
 		for(int i = 1; i <= height; i++) {
 			for(int j = 1; j <= width; j++) {
-				if(this->Tilemap[i][j].data == TILE_BOMB)
+				if(this->tilemap[i][j].data == TILE_BOMB)
 					continue;
 
 				const std::vector<Tile> neighbors = {
-					this->Tilemap[i - 1][j - 1], this->Tilemap[i - 1][j], this->Tilemap[i - 1][j + 1],
-					this->Tilemap[i][j - 1],   /*this->Tilemap[i][j],*/   this->Tilemap[i][j + 1],
-					this->Tilemap[i + 1][j - 1], this->Tilemap[i + 1][j], this->Tilemap[i + 1][j + 1]
+					this->tilemap[i - 1][j - 1], this->tilemap[i - 1][j], this->tilemap[i - 1][j + 1],
+					this->tilemap[i][j - 1],   /*this->Tilemap[i][j],*/   this->tilemap[i][j + 1],
+					this->tilemap[i + 1][j - 1], this->tilemap[i + 1][j], this->tilemap[i + 1][j + 1]
 				};
 
 				int tile_number = 0;
@@ -91,30 +91,14 @@ public:
 						tile_number++;
 				}
 
-				this->Tilemap[i][j].data = (TileData)tile_number;
+				this->tilemap[i][j].data = (TileData)tile_number;
 			}
-		}
-	}
-
-	void print_minefield()
-	{
-		for(int i = 0; i <= this->height + 1; i++) {
-			for(int j = 0; j <= this->width + 1; j++) {
-				if(this->Tilemap[i][j].data == TILE_BOMB) {
-					printf("\033[41mB\033[0m ");
-				} else if(this->Tilemap[i][j].data == TILE_EMPTY) {
-					printf("  ");
-				} else {
-					printf("%i ", this->Tilemap[i][j].data);
-				}
-			}
-			printf("\n");
 		}
 	}
 
 	void open_tile(int row, int col)
 	{
-		Tile* tile = &this->Tilemap[row][col];
+		Tile* tile = &this->tilemap[row][col];
 		if(!tile->flagged) {
 			tile->open = true;
 		}
@@ -125,7 +109,7 @@ public:
 		if(row > height) return;
 		if(col > width) return;
 
-		Tile* tile = &this->Tilemap[row][col];
+		Tile* tile = &this->tilemap[row][col];
 		if(!tile->open) {
 			tile->flagged = !tile->flagged;
 		}
@@ -191,7 +175,7 @@ bool pixel_to_tile(Minesweeper* game, int x, int y, int* row, int* column)
 	return true;
 }
 
-void handle_input(Minesweeper* game)
+void handle_input(Minesweeper* &game)
 {
 	SDL_Event event;
 	while (SDL_PollEvent(&event) != 0) {
@@ -236,6 +220,14 @@ void handle_input(Minesweeper* game)
 						if(pixel_to_tile(game, x, y, &row, &col)) {
 							game->flag_tile(row, col);
 						}
+						break;
+					}
+					case SDL_BUTTON_MIDDLE: {
+						printf("before: %p\n", game);
+						delete game;
+						printf("deleted: %p\n", game);
+						game = new Minesweeper(30, 16, 99);
+						printf("after: %p\n", game);
 						break;
 					}
 
@@ -285,21 +277,23 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 	SDL_Texture* bomb_texture = load_and_render_image_to_texture(g_renderer, "assets/bomb.png");
 	SDL_Texture* flag_texture = load_and_render_image_to_texture(g_renderer, "assets/flag.png");
 
-	Minesweeper game(30, 16, 99);
+	Minesweeper* game = new Minesweeper(30, 16, 99);
 
-	const int minimum_h = (AREA_START * 3) + game.height * TILE_HEIGHT;
-	const int minimum_w = (AREA_START * 3) + game.width  * TILE_WIDTH;
+	const int minimum_h = (AREA_START * 3) + game->height * TILE_HEIGHT;
+	const int minimum_w = (AREA_START * 3) + game->width  * TILE_WIDTH;
 	SDL_SetWindowMinimumSize(g_window, minimum_w, minimum_h);
 
 	int w, h = 0;
 	SDL_QueryTexture(number_textures[0], NULL, NULL, &w, &h);
 
+	const static uint64_t freq = SDL_GetPerformanceFrequency();
+
 	while (g_running)
 	{
-		handle_input(&game);
+		handle_input(game);
+		uint64_t start = SDL_GetPerformanceCounter();
 		SDL_RenderClear(g_renderer);
 /*
-
 		for(int i = 0; auto* texture : number_textures) {
 			const SDL_Rect debug_rect = {
 				.x = AREA_START + (i * w),
@@ -311,13 +305,13 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 			i++;
 		}
 */
-		for(int column = 1; column <= game.height; column++) 
+		for(int column = 1; column <= game->height; column++) 
 		{
-			for(int row = 1; row <= game.width; row++) 
+			for(int row = 1; row <= game->width; row++) 
 			{
 				const int xpos = AREA_START + (row    - 1) * TILE_WIDTH  + (row    - 1);
 				const int ypos = AREA_START + (column - 1) * TILE_HEIGHT + (column - 1);
-				const Tile& tile = game.Tilemap[column][row];
+				const Tile& tile = game->tilemap[column][row];
 				const SDL_Rect bound_rect = {
 					.x = xpos,
 					.y = ypos,
@@ -350,7 +344,7 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 						const SDL_Rect flag_rect = {
 							.x = bound_rect.x + TILE_SPACER,
 							.y = bound_rect.y + TILE_SPACER,
-							.w = TILE_WIDTH -  (TILE_SPACER * 2),
+							.w = TILE_WIDTH  - (TILE_SPACER * 2),
 							.h = TILE_HEIGHT - (TILE_SPACER * 2)
 						};
 						SDL_RenderCopy(g_renderer, flag_texture, NULL, &flag_rect);
@@ -362,7 +356,21 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 		}
 
 		SDL_RenderPresent(g_renderer);
-		SDL_Delay(14);
+		const uint64_t end = SDL_GetPerformanceCounter();
+		uint64_t elapsed_ticks = end - start;
+
+		//https://learn.microsoft.com/en-us/windows/win32/sysinfo/acquiring-high-resolution-time-stamps#using-qpc-in-native-code
+		elapsed_ticks *= 1000000;
+
+		const uint64_t elapsed_microseconds = elapsed_ticks / freq;
+		const double frametime = elapsed_microseconds / 1000.f;
+
+		SDL_Delay(16);
+/*
+		if(frametime < 1000 / 60) {
+			SDL_Delay(1000 / 60 - frametime);
+		}
+*/
 	}
 
 	IMG_Quit();
