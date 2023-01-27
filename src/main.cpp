@@ -46,8 +46,10 @@ public:
 	Minesweeper(int width, int height, int bombcount) 
 		: width(width), height(height)
 	{
+		// HACK: adding 1 tile to each side to prevent OOB
 		this->tilemap = std::vector<std::vector<Tile>>( 1 + height + 1, std::vector<Tile>(1 + width + 1, Tile() ) );
 
+		// cap bombcount to number of tiles
 		if(bombcount > width * height) {
 			this->bombcount = width * height;
 		} else {
@@ -57,6 +59,7 @@ public:
 		std::random_device dev;
 		std::mt19937 rng(dev());
 
+		// HACK: skip index 0 to prevent OOB
 		std::uniform_int_distribution<std::mt19937::result_type> random_width(1,  width);
 		std::uniform_int_distribution<std::mt19937::result_type> random_height(1, height);
 
@@ -73,12 +76,13 @@ public:
 				placed_bombs++;
 			}
 		}
-		
+
 		for(int i = 1; i <= height; i++) {
 			for(int j = 1; j <= width; j++) {
 				if(this->tilemap[i][j].data == TILE_BOMB)
 					continue;
 
+				// collect tile neighbors for calculating numbers
 				const std::vector<Tile> neighbors = {
 					this->tilemap[i - 1][j - 1], this->tilemap[i - 1][j], this->tilemap[i - 1][j + 1],
 					this->tilemap[i][j - 1],   /*this->Tilemap[i][j],*/   this->tilemap[i][j + 1],
@@ -252,7 +256,6 @@ void handle_input(Minesweeper* &game)
 
 int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 {
-	// TODO: parse args (screen size, board size, mine count)
 	if(!initialize_sdl())
 		free_and_quit();
 
