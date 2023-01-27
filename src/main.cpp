@@ -9,7 +9,6 @@
 #include "constants.hpp"
 #include "globals.hpp"
 #include "renderer.hpp"
-#include "font.hpp"
 
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
@@ -259,7 +258,12 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 	SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
 	//TODO: variable font pt size?
-	TTF_Font* test_font = load_font("assets/joystix.monospace-regular.ttf", 24);
+	TTF_Font* test_font = TTF_OpenFont("assets/joystix.monospace-regular.ttf", 24);
+
+	if(!test_font) {
+		std::cout << "Couldn't load font, ERROR: " << TTF_GetError() << "\n";
+		free_and_quit();
+	}
 
 	SDL_Texture* number_textures[] = {
 		render_colored_text(g_renderer, test_font, "1"), render_colored_text(g_renderer, test_font, "2"), render_colored_text(g_renderer, test_font, "3"),
