@@ -227,11 +227,8 @@ void handle_input(Minesweeper* &game)
 						break;
 					}
 					case SDL_BUTTON_MIDDLE: {
-						printf("before: %p\n", game);
 						delete game;
-						printf("deleted: %p\n", game);
 						game = new Minesweeper(30, 16, 99);
-						printf("after: %p\n", game);
 						break;
 					}
 
@@ -261,13 +258,6 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 
 	SDL_SetRenderDrawColor(g_renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
-#ifdef __unix__
-	if(!SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0"))
-    {
-        std::cout << "SDL can not disable compositor bypass!" << std::endl;
-        free_and_quit();
-    }
-#endif
 	//TODO: variable font pt size?
 	TTF_Font* test_font = load_font("assets/joystix.monospace-regular.ttf", 24);
 
@@ -296,31 +286,23 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 		handle_input(game);
 		uint64_t start = SDL_GetPerformanceCounter();
 		SDL_RenderClear(g_renderer);
-/*
-		for(int i = 0; auto* texture : number_textures) {
-			const SDL_Rect debug_rect = {
-				.x = AREA_START + (i * w),
-				.y = AREA_START * 2 + (TILE_HEIGHT * game.height),
-				.w = w,
-				.h = h
-			};
-			SDL_RenderCopy(g_renderer, texture, NULL, &debug_rect);
-			i++;
-		}
-*/
+
 		for(int column = 1; column <= game->height; column++) 
 		{
 			for(int row = 1; row <= game->width; row++) 
 			{
 				const int xpos = AREA_START + (row    - 1) * TILE_WIDTH  + (row    - 1);
 				const int ypos = AREA_START + (column - 1) * TILE_HEIGHT + (column - 1);
+
 				const Tile& tile = game->tilemap[column][row];
+				
 				const SDL_Rect bound_rect = {
 					.x = xpos,
 					.y = ypos,
 					.w = TILE_WIDTH,
 					.h = TILE_HEIGHT
 				};
+				
 				if(tile.open) {
 					if(tile.data != TILE_BOMB && tile.data != TILE_EMPTY) {
 						const SDL_Rect number_rect = {
