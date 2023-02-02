@@ -346,7 +346,7 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 				}
 				else 
 				{
-					RenderFilledRectWithColor(g_renderer, &bound_rect, 127, 127, 127);
+					render_filled_rect(g_renderer, &bound_rect, 127, 127, 127);
 					if(tile.flagged) {
 						const SDL_Rect flag_rect = {
 							.x = bound_rect.x + TILE_SPACER,
@@ -358,7 +358,7 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 					}
 				}
 
-				RenderRectWithColor(g_renderer, &bound_rect, 0, 0, 0);
+				render_rect_with_color(g_renderer, &bound_rect, 0, 0, 0);
 			}
 		}
 
