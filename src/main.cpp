@@ -62,6 +62,8 @@ public:
 		std::uniform_int_distribution<std::mt19937::result_type> random_width(1,  width);
 		std::uniform_int_distribution<std::mt19937::result_type> random_height(1, height);
 
+		// this is not optimal as random will probably generate the same number
+		// which makes this loop take longer than it should
 		int placed_bombs = 0;
 		while(placed_bombs < bombcount)
 		{
@@ -264,24 +266,28 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 		std::cout << "Couldn't load font, ERROR: " << TTF_GetError() << "\n";
 		free_and_quit();
 	}
-
+	
+	// rendering each number separately because all of them have different dimensions when rendered together
 	SDL_Texture* number_textures[] = {
 		render_colored_text(g_renderer, test_font, "1"), render_colored_text(g_renderer, test_font, "2"), render_colored_text(g_renderer, test_font, "3"),
 		render_colored_text(g_renderer, test_font, "4"), render_colored_text(g_renderer, test_font, "5"), render_colored_text(g_renderer, test_font, "6"),
 		render_colored_text(g_renderer, test_font, "7"), render_colored_text(g_renderer, test_font, "8")
 	};
 
+	// load and render necessary textures
 	SDL_Texture* bomb_texture = load_and_render_image_to_texture(g_renderer, "assets/bomb.png");
 	SDL_Texture* flag_texture = load_and_render_image_to_texture(g_renderer, "assets/flag.png");
 
 	Minesweeper* game = new Minesweeper(30, 16, 99);
 
-	const int minimum_h = (AREA_START * 3) + game->height * TILE_HEIGHT;
-	const int minimum_w = (AREA_START * 3) + game->width  * TILE_WIDTH;
+	// calculate minimum window dimensions
+	// TODO: change these on new game
+	int minimum_w = (AREA_START * 3) + game->width  * TILE_WIDTH;
+	int minimum_h = (AREA_START * 3) + game->height * TILE_HEIGHT;
 	SDL_SetWindowMinimumSize(g_window, minimum_w, minimum_h);
 
-	int w, h = 0;
-	SDL_QueryTexture(number_textures[0], NULL, NULL, &w, &h);
+	int char_width, char_height = 0;
+	SDL_QueryTexture(number_textures[0], NULL, NULL, &char_width, &char_height);
 
 	const static uint64_t freq = SDL_GetPerformanceFrequency();
 
@@ -310,17 +316,17 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 				if(tile.open) {
 					if(tile.data != TILE_BOMB && tile.data != TILE_EMPTY) {
 						const SDL_Rect number_rect = {
-							.x = xpos + 4,
+							.x = xpos + TILE_SPACER + 1,
 							.y = ypos,
-							.w = w, 
-							.h = h
+							.w = char_width, 
+							.h = char_height
 						};
 						SDL_RenderCopy(g_renderer, number_textures[tile.data - 1], NULL, &number_rect);
 					} else if(tile.data == TILE_BOMB) {
 						const SDL_Rect bomb_rect = {
 							.x = bound_rect.x + TILE_SPACER,
 							.y = bound_rect.y + TILE_SPACER,
-							.w = TILE_WIDTH -  (TILE_SPACER * 2),
+							.w = TILE_WIDTH  - (TILE_SPACER * 2),
 							.h = TILE_HEIGHT - (TILE_SPACER * 2)
 						};
 						SDL_RenderCopy(g_renderer, bomb_texture, NULL, &bomb_rect);
@@ -353,13 +359,11 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 
 		const uint64_t elapsed_microseconds = elapsed_ticks / freq;
 		const double frametime = elapsed_microseconds / 1000.f;
-
-		SDL_Delay(16);
-/*
-		if(frametime < 1000 / 60) {
-			SDL_Delay(1000 / 60 - frametime);
+		
+		// cap framerate at 60
+		if(frametime < 1000.f / 60.f) {
+			SDL_Delay(1000.f / 60.f - frametime);
 		}
-*/
 	}
 
 	IMG_Quit();
