@@ -84,7 +84,7 @@ public:
 					continue;
 
 				// collect tile neighbors for calculating numbers
-				const std::vector<Tile> neighbors = {
+				const Tile neighbors[] = {
 					this->tilemap[i - 1][j - 1], this->tilemap[i - 1][j], this->tilemap[i - 1][j + 1],
 					this->tilemap[i][j - 1],   /*this->Tilemap[i][j],*/   this->tilemap[i][j + 1],
 					this->tilemap[i + 1][j - 1], this->tilemap[i + 1][j], this->tilemap[i + 1][j + 1]
@@ -104,8 +104,20 @@ public:
 	void open_tile(int row, int col)
 	{
 		Tile* tile = &this->tilemap[row][col];
-		if(!tile->flagged) {
+		if(!tile->flagged && !tile->open) {
 			tile->open = true;
+
+			// open neighboring empty tiles
+			if (tile->data == TILE_EMPTY) {
+				for (int i = -1; i <= 1; i++) {
+					for (int j = -1; j <= 1; j++) {
+						if (i == 0 && j == 0) continue;
+						if ( (row + i < 1 || col + j < 1) || (row + i > height || col + j > width)) continue;
+						
+						open_tile(row + i, col + j);
+					}
+				}
+			}
 		}
 	}
 
