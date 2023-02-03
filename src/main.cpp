@@ -6,9 +6,19 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
 
-#include "constants.hpp"
 #include "globals.hpp"
 #include "renderer.hpp"
+
+constexpr int SCREEN_WIDTH = 800;
+constexpr int SCREEN_HEIGHT = 600;
+
+constexpr int GLOBAL_SCALE = 3;
+
+constexpr int TILE_WIDTH  = 10 * GLOBAL_SCALE;
+constexpr int TILE_HEIGHT = 10 * GLOBAL_SCALE;
+
+constexpr int OUTSIDE_PADDING = 30;
+constexpr int TILE_NUMBER_SPACER = 3;
 
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
@@ -175,18 +185,16 @@ bool lmb_wasdown;
 
 bool pixel_to_tile(Minesweeper* game, int x, int y, int* row, int* column)
 {
-	int bound_x = AREA_START + (game->width  * TILE_WIDTH)  + game->width; 
-	int bound_y = AREA_START + (game->height * TILE_HEIGHT) + game->height;
+	int bound_x = OUTSIDE_PADDING + (game->width  * TILE_WIDTH)  + game->width;
+	int bound_y = OUTSIDE_PADDING + (game->height * TILE_HEIGHT) + game->height;
 
-	printf("x: %i, y: %i\n", x, y);
-
-	if (x < AREA_START || y < AREA_START ||
+	if (x < OUTSIDE_PADDING || y < OUTSIDE_PADDING ||
 		x > bound_x || y > bound_y) 
 	{
 		return false;
 	}
 
-	*row =    (y - (y % (TILE_HEIGHT + 1))) / (TILE_HEIGHT + 1);
+	*row 	= (y - (y % (TILE_HEIGHT + 1))) / (TILE_HEIGHT + 1);
 	*column = (x - (x % (TILE_WIDTH  + 1))) / (TILE_WIDTH  + 1);
 
 	return true;
@@ -294,8 +302,8 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 
 	// calculate minimum window dimensions
 	// TODO: change these on new game
-	int minimum_w = (AREA_START * 3) + game->width  * TILE_WIDTH;
-	int minimum_h = (AREA_START * 3) + game->height * TILE_HEIGHT;
+	int minimum_w = game->width  * TILE_WIDTH  + game->width  + 2 * OUTSIDE_PADDING;
+	int minimum_h = game->height * TILE_HEIGHT + game->height + 2 * OUTSIDE_PADDING;
 	SDL_SetWindowMinimumSize(g_window, minimum_w, minimum_h);
 
 	int char_width, char_height = 0;
@@ -309,18 +317,19 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 		uint64_t start = SDL_GetPerformanceCounter();
 		SDL_RenderClear(g_renderer);
 
+		// HACK: starting at index 1 due the hack when generating bombs
 		for(int column = 1; column <= game->height; column++) 
 		{
 			for(int row = 1; row <= game->width; row++) 
 			{
-				const int xpos = AREA_START + (row    - 1) * TILE_WIDTH  + (row    - 1);
-				const int ypos = AREA_START + (column - 1) * TILE_HEIGHT + (column - 1);
+				const int tile_xpos = (row    - 1) * TILE_WIDTH  + OUTSIDE_PADDING + (row    - 1);
+				const int tile_ypos = (column - 1) * TILE_HEIGHT + OUTSIDE_PADDING + (column - 1);
 
-				const Tile& tile = game->tilemap[column][row];
+				Tile& tile = game->tilemap[column][row];
 				
 				const SDL_Rect bound_rect = {
-					.x = xpos,
-					.y = ypos,
+					.x = tile_xpos,
+					.y = tile_ypos,
 					.w = TILE_WIDTH,
 					.h = TILE_HEIGHT
 				};
@@ -328,31 +337,41 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 				if(tile.open) {
 					if(tile.data != TILE_BOMB && tile.data != TILE_EMPTY) {
 						const SDL_Rect number_rect = {
-							.x = xpos + TILE_SPACER + 1,
-							.y = ypos,
+							.x = tile_xpos + TILE_NUMBER_SPACER + 1,
+							.y = tile_ypos,
 							.w = char_width, 
 							.h = char_height
 						};
 						SDL_RenderCopy(g_renderer, number_textures[tile.data - 1], NULL, &number_rect);
 					} else if(tile.data == TILE_BOMB) {
 						const SDL_Rect bomb_rect = {
-							.x = bound_rect.x + TILE_SPACER,
-							.y = bound_rect.y + TILE_SPACER,
-							.w = TILE_WIDTH  - (TILE_SPACER * 2),
-							.h = TILE_HEIGHT - (TILE_SPACER * 2)
+							.x = bound_rect.x + TILE_NUMBER_SPACER,
+							.y = bound_rect.y + TILE_NUMBER_SPACER,
+							.w = TILE_WIDTH  - (TILE_NUMBER_SPACER * 2),
+							.h = TILE_HEIGHT - (TILE_NUMBER_SPACER * 2)
 						};
 						SDL_RenderCopy(g_renderer, bomb_texture, NULL, &bomb_rect);
 					}
+				} 
+				else if (game->dead && tile.data == TILE_BOMB) 
+				{
+					const SDL_Rect bomb_rect = {
+						.x = bound_rect.x + TILE_NUMBER_SPACER,
+						.y = bound_rect.y + TILE_NUMBER_SPACER,
+						.w = TILE_WIDTH  - (TILE_NUMBER_SPACER * 2),
+						.h = TILE_HEIGHT - (TILE_NUMBER_SPACER * 2)
+					};
+					SDL_RenderCopy(g_renderer, bomb_texture, NULL, &bomb_rect);
 				}
 				else 
 				{
 					render_filled_rect(g_renderer, &bound_rect, 127, 127, 127);
 					if(tile.flagged) {
 						const SDL_Rect flag_rect = {
-							.x = bound_rect.x + TILE_SPACER,
-							.y = bound_rect.y + TILE_SPACER,
-							.w = TILE_WIDTH  - (TILE_SPACER * 2),
-							.h = TILE_HEIGHT - (TILE_SPACER * 2)
+							.x = bound_rect.x + TILE_NUMBER_SPACER,
+							.y = bound_rect.y + TILE_NUMBER_SPACER,
+							.w = TILE_WIDTH  - (TILE_NUMBER_SPACER * 2),
+							.h = TILE_HEIGHT - (TILE_NUMBER_SPACER * 2)
 						};
 						SDL_RenderCopy(g_renderer, flag_texture, NULL, &flag_rect);
 					}
