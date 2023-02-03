@@ -49,20 +49,18 @@ class Minesweeper {
 	int bombcount;
 public:
 	int width, height;
+	bool dead = false;
 
 	std::vector<std::vector<Tile>> tilemap;
 
-	Minesweeper(int width, int height, int bombcount) 
-		: width(width), height(height)
+	Minesweeper(int width, int height, int bombcount) : bombcount(bombcount), width(width), height(height)
 	{
 		// HACK: adding 1 tile to each side to prevent OOB
 		this->tilemap = std::vector<std::vector<Tile>>( 1 + height + 1, std::vector<Tile>(1 + width + 1, Tile() ) );
 
 		// cap bombcount to number of tiles
-		if(bombcount > width * height) {
+		if(this->bombcount > width * height) {
 			this->bombcount = width * height;
-		} else {
-			this->bombcount = bombcount;
 		}
 
 		std::random_device dev;
@@ -113,6 +111,8 @@ public:
 
 	void open_tile(int row, int col)
 	{
+		if (this->dead) return;
+
 		Tile* tile = &this->tilemap[row][col];
 		if(!tile->flagged && !tile->open) {
 			tile->open = true;
@@ -128,11 +128,16 @@ public:
 					}
 				}
 			}
+			else if (tile->data == TILE_BOMB) {
+				this->dead = true;
+			}
 		}
 	}
 
 	void flag_tile(int row, int col)
 	{
+		if (this->dead) return;
+
 		if(row > height) return;
 		if(col > width) return;
 
