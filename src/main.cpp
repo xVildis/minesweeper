@@ -152,7 +152,7 @@ bool initialize_sdl()
 {
 	int sdl_status = SDL_Init(SDL_INIT_EVERYTHING);
 	if(sdl_status < 0) {
-		printf("Could not initialize SDL, ERROR: %s\n", SDL_GetError());
+		std::cout << "Could not initialize SDL, ERROR: " << SDL_GetError() << "\n";
 		return false;
 	}
 
@@ -227,7 +227,6 @@ void handle_input(Minesweeper* &game)
 				break;
 			}
 
-			// TODO: set emoji at the top
 			case SDL_MOUSEBUTTONDOWN:
 			{
 				SDL_MouseButtonEvent mouse_event = event.button;
@@ -294,9 +293,9 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 	
 	// rendering each number separately because all of them have different dimensions when rendered together
 	SDL_Texture* number_textures[] = {
-		render_colored_text(g_renderer, test_font, "1"), render_colored_text(g_renderer, test_font, "2"), render_colored_text(g_renderer, test_font, "3"),
-		render_colored_text(g_renderer, test_font, "4"), render_colored_text(g_renderer, test_font, "5"), render_colored_text(g_renderer, test_font, "6"),
-		render_colored_text(g_renderer, test_font, "7"), render_colored_text(g_renderer, test_font, "8")
+		render_colored_text(g_renderer, test_font, "1", {0,0,255,255}), render_colored_text(g_renderer, test_font, "2", {0,128,0,255}), render_colored_text(g_renderer, test_font, "3", {255,0,0,255}),
+		render_colored_text(g_renderer, test_font, "4", {0,0,128,255}), render_colored_text(g_renderer, test_font, "5", {128,0,0,255}), render_colored_text(g_renderer, test_font, "6", {100, 255, 255,255}),
+		render_colored_text(g_renderer, test_font, "7", {0,0,0,255}),   render_colored_text(g_renderer, test_font, "8", {80,80,80,255})
 	};
 
 	// load and render necessary textures
