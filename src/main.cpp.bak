@@ -113,7 +113,7 @@ public:
 		}
 	}
 
-	void open_tile(int row, int col)
+	void open_tile(int row, int col, bool recurse = false)
 	{
 		if (this->dead) return;
 
@@ -129,12 +129,39 @@ public:
 						if (i == 0 && j == 0) continue;
 						if ( (row + i < 1 || col + j < 1) || (row + i > height || col + j > width)) continue;
 						
-						open_tile(row + i, col + j);
+						open_tile(row + i, col + j, true);
 					}
 				}
 			}
 			else if (tile->data == TILE_BOMB) {
 				this->dead = true;
+			}
+		}
+		else if (!recurse && tile->open && (tile->data != TILE_EMPTY || tile->data != TILE_BOMB))
+		{
+			int flagged_neighbors = 0;
+			for (int i = -1; i <= 1; i++) {
+				for (int j = -1; j <= 1; j++) {
+					if (i == 0 && j == 0) continue;
+					if ( (row + i < 1 || col + j < 1) || (row + i > height || col + j > width)) continue;
+					
+					Tile& neighbor = this->tilemap[row+i][col+j];
+					if (neighbor.flagged)
+						flagged_neighbors++;
+				}
+			}
+
+			if (flagged_neighbors > 0 && flagged_neighbors == tile->data) {
+				for (int i = -1; i <= 1; i++) {
+					for (int j = -1; j <= 1; j++) {
+						if (i == 0 && j == 0) continue;
+						if ( (row + i < 1 || col + j < 1) || (row + i > height || col + j > width)) continue;
+			
+						Tile& neighbor = this->tilemap[row+i][col+j];
+						if(neighbor.data != TILE_EMPTY)
+							open_tile(row+i, col+j);
+					}
+				}
 			}
 		}
 	}
@@ -304,10 +331,9 @@ void handle_input(Minesweeper* &game)
 		
 } 
 
-void game_loop(void* ctx)
+void game_loop(game_context* ctx)
 {
-	game_context* context = (game_context*)ctx;
-	Minesweeper* &game = context->game;
+	Minesweeper* &game = ctx->game;
 
 	handle_input(game);
 	SDL_RenderClear(g_renderer);
@@ -330,19 +356,19 @@ void game_loop(void* ctx)
 				.w = TILE_WIDTH,
 				.h = TILE_HEIGHT
 			};
+
+			int tile_width  = ctx->numbers[tile_number].w;
+			int tile_height = ctx->numbers[tile_number].h;
 			
 			if(tile.open) {
 				if(tile.data != TILE_BOMB && tile.data != TILE_EMPTY) {
-					int tile_width = context->numbers[tile_number].w;
-					int tile_height = context->numbers[tile_number].h;
-
 					const SDL_Rect number_rect = {
 						.x = tile_xpos + (bound_rect.w - tile_width) / 2,
 						.y = tile_ypos + (bound_rect.h - tile_height) / 2,
 						.w = tile_width, 
 						.h = tile_height
 					};
-					SDL_RenderCopy(g_renderer, context->numbers[tile_number].tex, NULL, &number_rect);
+					SDL_RenderCopy(g_renderer, ctx->numbers[tile_number].tex, NULL, &number_rect);
 				} else if(tile.data == TILE_BOMB) {
 					const SDL_Rect bomb_rect = {
 						.x = bound_rect.x + INSIDE_TILE_PADDING,
@@ -350,7 +376,7 @@ void game_loop(void* ctx)
 						.w = TILE_WIDTH  - (INSIDE_TILE_PADDING * 2),
 						.h = TILE_HEIGHT - (INSIDE_TILE_PADDING * 2)
 					};
-					SDL_RenderCopy(g_renderer, context->bomb, NULL, &bomb_rect);
+					SDL_RenderCopy(g_renderer, ctx->bomb, NULL, &bomb_rect);
 				}
 			} 
 			else if (game->dead && tile.data == TILE_BOMB) 
@@ -361,7 +387,7 @@ void game_loop(void* ctx)
 					.w = TILE_WIDTH  - (INSIDE_TILE_PADDING * 2),
 					.h = TILE_HEIGHT - (INSIDE_TILE_PADDING * 2)
 				};
-				SDL_RenderCopy(g_renderer, context->bomb, NULL, &bomb_rect);
+				SDL_RenderCopy(g_renderer, ctx->bomb, NULL, &bomb_rect);
 			}
 			else 
 			{
@@ -373,7 +399,7 @@ void game_loop(void* ctx)
 						.w = TILE_WIDTH  - (INSIDE_TILE_PADDING * 2),
 						.h = TILE_HEIGHT - (INSIDE_TILE_PADDING * 2)
 					};
-					SDL_RenderCopy(g_renderer, context->flag, NULL, &flag_rect);
+					SDL_RenderCopy(g_renderer, ctx->flag, NULL, &flag_rect);
 				}
 			}
 
@@ -433,7 +459,7 @@ int main( [[maybe_unused]] int argc, [[maybe_unused]] char* argv[])
 	SDL_SetWindowMinimumSize(g_window, minimum_w, minimum_h);
 
 #ifdef __EMSCRIPTEN__
-	emscripten_set_main_loop_arg(game_loop, (void*)&context, 0, true);
+	emscripten_set_main_loop_arg(game_loop, &context, 0, true);
 #else
 	const uint64_t freq = SDL_GetPerformanceFrequency();
 	while (g_running)

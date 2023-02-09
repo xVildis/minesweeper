@@ -53,7 +53,7 @@ SDL_Texture* load_and_render_image_to_texture(SDL_Renderer* renderer, const char
 
 SDL_Texture* render_colored_text(SDL_Renderer* renderer, TTF_Font* font, const char* text, SDL_Color color)
 {
-	SDL_Surface* text_surface = TTF_RenderText_Solid(font, text, color);
+	SDL_Surface* text_surface = TTF_RenderText_Blended(font, text, color);
 
 	if(text_surface == NULL) {
 		std::cout << "Couldn't render number text, ERROR: " << TTF_GetError() << "\n";

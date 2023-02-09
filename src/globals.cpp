@@ -2,12 +2,14 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 
+#include <cstdlib>
+
 #include "globals.hpp"
 
 extern SDL_Window* g_window;
 extern SDL_Renderer* g_renderer;
 
-void _GLIBCXX_NORETURN free_and_quit()
+[[ noreturn ]] void free_and_quit()
 {
 	IMG_Quit();
 	TTF_Quit();
@@ -16,5 +18,5 @@ void _GLIBCXX_NORETURN free_and_quit()
 	SDL_DestroyWindow(g_window);
 	SDL_Quit();
 
-	exit(EXIT_FAILURE);
+	std::exit(1);
 }
